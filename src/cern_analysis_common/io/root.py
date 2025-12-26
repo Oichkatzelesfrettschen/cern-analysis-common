@@ -188,3 +188,134 @@ def list_branches(filepath: Union[str, Path], tree_name: str) -> Dict[str, str]:
     with uproot.open(filepath) as f:
         tree = f[tree_name]
         return {name: str(branch.typename) for name, branch in tree.items()}
+
+
+def load_dataset(
+    file_pattern: Union[str, Path, List[str]],
+    tree_name: Optional[str] = None,
+    branches: Optional[List[str]] = None,
+    cut: Optional[str] = None,
+    library: str = "ak",
+    max_workers: int = 4,
+) -> Any:
+    """
+    Load a dataset composed of multiple ROOT files in parallel.
+
+    Parameters
+    ----------
+    file_pattern : str or list
+        Glob pattern (e.g., "data/*.root") or list of paths.
+    tree_name : str, optional
+        Name of TTree.
+    branches : list, optional
+        Branches to load.
+    cut : str, optional
+        Selection cut.
+    library : str
+        Output format ("ak", "np", "pd").
+    max_workers : int
+        Number of parallel threads.
+
+    Returns
+    -------
+    Concatenated array (awkward, numpy, or pandas).
+    """
+    _check_uproot()
+    import glob
+    import concurrent.futures
+
+    # Resolve file list
+    if isinstance(file_pattern, (str, Path)):
+        files = sorted(glob.glob(str(file_pattern)))
+    else:
+        files = sorted(list(file_pattern))
+
+    if not files:
+        raise ValueError(f"No files matched pattern: {file_pattern}")
+
+    # Function to read a single file
+    def _read_one(path):
+        return load_root(path, tree_name, branches, cut, library)
+
+    # Parallel execution
+    results = []
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+        future_to_file = {executor.submit(_read_one, f): f for f in files}
+        for future in concurrent.futures.as_completed(future_to_file):
+            try:
+                data = future.result()
+                results.append(data)
+            except Exception as e:
+                print(f"Error reading {future_to_file[future]}: {e}")
+                # We might want to raise, or skip
+                raise e
+
+    # Concatenate results
+    if not results:
+        return None
+
+    if library == "ak":
+        return ak.concatenate(results)
+    elif library == "pd":
+        import pandas as pd
+        return pd.concat(results, ignore_index=True)
+    elif library == "np":
+        # For numpy, usually load_root returns a dict of arrays
+        # We need to concat each key
+        keys = results[0].keys()
+        combined = {}
+        for k in keys:
+            combined[k] = np.concatenate([r[k] for r in results])
+        return combined
+    else:
+        raise ValueError(f"Unsupported library for concatenation: {library}")
+
+
+def iterate_dataset(
+    file_pattern: Union[str, Path, List[str]],
+    tree_name: Optional[str] = None,
+    branches: Optional[List[str]] = None,
+    cut: Optional[str] = None,
+    library: str = "ak",
+    step_size: Union[int, str] = "100MB",
+) -> Any:
+    """
+    Iterate over a dataset in chunks. Useful for files larger than RAM.
+
+    Parameters
+    ----------
+    file_pattern : str or list
+        Glob pattern or list of paths.
+    tree_name : str, optional
+        Name of TTree.
+    branches : list, optional
+        Branches to load.
+    cut : str, optional
+        Selection cut.
+    library : str
+        Output format.
+    step_size : int or str
+        Size of chunks (e.g., "100MB" or number of entries).
+
+    Yields
+    ------
+    Chunks of data in requested format.
+    """
+    _check_uproot()
+    import glob
+
+    if isinstance(file_pattern, (str, Path)):
+        files = sorted(glob.glob(str(file_pattern)))
+    else:
+        files = sorted(list(file_pattern))
+
+    for f in files:
+        # uproot.iterate handles individual files or lists
+        for chunk in uproot.iterate(
+            f"{f}:{tree_name}" if tree_name else f,
+            expressions=branches,
+            cut=cut,
+            library=library,
+            step_size=step_size,
+        ):
+            yield chunk
