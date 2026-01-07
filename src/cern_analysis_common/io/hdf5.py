@@ -4,7 +4,7 @@ HDF5 is commonly used for preprocessed HEP data and ML training sets.
 """
 
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Dict, List, Optional, Union, cast
 
 import numpy as np
 
@@ -95,8 +95,8 @@ def load_hdf5_dataset(
 
         ds = f[dataset]
         if start is not None or stop is not None:
-            return ds[start:stop]
-        return ds[:]
+            return cast(np.ndarray, ds[start:stop])
+        return cast(np.ndarray, ds[:])
 
 
 def save_hdf5(

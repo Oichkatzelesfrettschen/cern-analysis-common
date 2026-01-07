@@ -1,5 +1,6 @@
 import numpy as np
 
+
 class FourVector:
     """
     Simple FourVector class.
@@ -9,20 +10,20 @@ class FourVector:
         self.px = px
         self.py = py
         self.pz = pz
-        
+
     @property
     def pt(self):
         return np.sqrt(self.px**2 + self.py**2)
-        
+
     @property
     def eta(self):
-        return -0.5 * np.log((np.sqrt(self.px**2 + self.py**2 + self.pz**2) - self.pz) / 
+        return -0.5 * np.log((np.sqrt(self.px**2 + self.py**2 + self.pz**2) - self.pz) /
                              (np.sqrt(self.px**2 + self.py**2 + self.pz**2) + self.pz))
-                             
+
     @property
     def phi(self):
         return np.arctan2(self.py, self.px)
-        
+
     @property
     def mass(self):
         m2 = self.E**2 - self.px**2 - self.py**2 - self.pz**2

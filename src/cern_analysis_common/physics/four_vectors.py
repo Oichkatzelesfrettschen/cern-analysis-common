@@ -5,9 +5,15 @@ All calculations assume natural units (c=1).
 """
 
 from dataclasses import dataclass
-from typing import Optional, Tuple, Union
+from typing import Tuple, Union, cast
 
 import numpy as np
+
+
+def _scalar_or_array(value: object) -> Union[float, np.ndarray]:
+    if np.isscalar(value):
+        return float(value)  # type: ignore[arg-type]
+    return cast(np.ndarray, value)
 
 
 @dataclass
@@ -45,22 +51,22 @@ class FourVector:
     def mass(self) -> Union[float, np.ndarray]:
         """Invariant mass: sqrt(E^2 - p^2)."""
         m2 = self.E**2 - self.px**2 - self.py**2 - self.pz**2
-        return np.sqrt(np.maximum(m2, 0))
+        return _scalar_or_array(np.sqrt(np.maximum(m2, 0)))
 
     @property
     def mass_squared(self) -> Union[float, np.ndarray]:
         """Invariant mass squared (can be negative for spacelike)."""
-        return self.E**2 - self.px**2 - self.py**2 - self.pz**2
+        return _scalar_or_array(self.E**2 - self.px**2 - self.py**2 - self.pz**2)
 
     @property
     def pt(self) -> Union[float, np.ndarray]:
         """Transverse momentum."""
-        return np.sqrt(self.px**2 + self.py**2)
+        return _scalar_or_array(np.sqrt(self.px**2 + self.py**2))
 
     @property
     def p(self) -> Union[float, np.ndarray]:
         """Total 3-momentum magnitude."""
-        return np.sqrt(self.px**2 + self.py**2 + self.pz**2)
+        return _scalar_or_array(np.sqrt(self.px**2 + self.py**2 + self.pz**2))
 
     @property
     def eta(self) -> Union[float, np.ndarray]:
@@ -70,7 +76,7 @@ class FourVector:
     @property
     def phi(self) -> Union[float, np.ndarray]:
         """Azimuthal angle."""
-        return np.arctan2(self.py, self.px)
+        return _scalar_or_array(np.arctan2(self.py, self.px))
 
     @property
     def rapidity(self) -> Union[float, np.ndarray]:
@@ -80,7 +86,7 @@ class FourVector:
     @property
     def mt(self) -> Union[float, np.ndarray]:
         """Transverse mass: sqrt(E^2 - pz^2)."""
-        return np.sqrt(np.maximum(self.E**2 - self.pz**2, 0))
+        return _scalar_or_array(np.sqrt(np.maximum(self.E**2 - self.pz**2, 0)))
 
     def __add__(self, other: "FourVector") -> "FourVector":
         """Add two four-vectors."""
@@ -233,15 +239,17 @@ def invariant_mass_from_arrays(
     pz_tot = pz1 + pz2
 
     m2_inv = E_tot**2 - px_tot**2 - py_tot**2 - pz_tot**2
-    return np.sqrt(np.maximum(m2_inv, 0))
+    return cast(np.ndarray, np.sqrt(np.maximum(m2_inv, 0)))
 
 
 def transverse_momentum(px: np.ndarray, py: np.ndarray) -> np.ndarray:
     """Compute transverse momentum."""
-    return np.sqrt(px**2 + py**2)
+    return cast(np.ndarray, np.sqrt(px**2 + py**2))
 
 
-def pseudorapidity(pt: np.ndarray, pz: np.ndarray) -> np.ndarray:
+def pseudorapidity(
+    pt: Union[float, np.ndarray], pz: Union[float, np.ndarray]
+) -> Union[float, np.ndarray]:
     """Compute pseudorapidity eta = -ln(tan(theta/2)).
 
     Parameters
@@ -260,10 +268,10 @@ def pseudorapidity(pt: np.ndarray, pz: np.ndarray) -> np.ndarray:
     # Avoid division by zero
     with np.errstate(divide="ignore", invalid="ignore"):
         eta = 0.5 * np.log((p + pz) / (p - pz))
-    return eta
+    return _scalar_or_array(eta)
 
 
-def rapidity(E: np.ndarray, pz: np.ndarray) -> np.ndarray:
+def rapidity(E: Union[float, np.ndarray], pz: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
     """Compute rapidity y = 0.5 * ln((E+pz)/(E-pz)).
 
     Parameters
@@ -280,7 +288,7 @@ def rapidity(E: np.ndarray, pz: np.ndarray) -> np.ndarray:
     """
     with np.errstate(divide="ignore", invalid="ignore"):
         y = 0.5 * np.log((E + pz) / (E - pz))
-    return y
+    return _scalar_or_array(y)
 
 
 def delta_phi(phi1: np.ndarray, phi2: np.ndarray) -> np.ndarray:
@@ -301,7 +309,7 @@ def delta_phi(phi1: np.ndarray, phi2: np.ndarray) -> np.ndarray:
     dphi = phi1 - phi2
     # Wrap to [-pi, pi]
     dphi = np.arctan2(np.sin(dphi), np.cos(dphi))
-    return dphi
+    return cast(np.ndarray, dphi)
 
 
 def delta_r(
@@ -330,7 +338,7 @@ def delta_r(
     """
     deta = eta1 - eta2
     dphi = delta_phi(phi1, phi2)
-    return np.sqrt(deta**2 + dphi**2)
+    return cast(np.ndarray, np.sqrt(deta**2 + dphi**2))
 
 
 def boost_to_cm(p1: FourVector, p2: FourVector) -> Tuple[FourVector, FourVector]:
@@ -349,7 +357,6 @@ def boost_to_cm(p1: FourVector, p2: FourVector) -> Tuple[FourVector, FourVector]
         (p1_cm, p2_cm) in center-of-mass frame
     """
     total = p1 + p2
-    E_cm = total.mass
 
     # Boost velocity (beta)
     bx = total.px / total.E

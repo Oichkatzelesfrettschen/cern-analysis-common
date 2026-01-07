@@ -4,7 +4,7 @@ Includes metrics specific to particle physics like significance improvement
 and background rejection at fixed signal efficiency.
 """
 
-from typing import Optional, Tuple
+from typing import Optional, Tuple, cast
 
 import numpy as np
 
@@ -46,13 +46,13 @@ def roc_curve_with_errors(
     fpr = np.zeros(n_thresholds)
     tpr = np.zeros(n_thresholds)
 
-    n_pos = np.sum(y_true == 1)
-    n_neg = np.sum(y_true == 0)
+    n_pos = int(np.sum(y_true == 1))
+    n_neg = int(np.sum(y_true == 0))
 
     for i, thresh in enumerate(thresholds):
         pred = (y_score >= thresh).astype(int)
-        tp = np.sum((pred == 1) & (y_true == 1))
-        fp = np.sum((pred == 1) & (y_true == 0))
+        tp = int(np.sum((pred == 1) & (y_true == 1)))
+        fp = int(np.sum((pred == 1) & (y_true == 0)))
 
         tpr[i] = tp / n_pos if n_pos > 0 else 0
         fpr[i] = fp / n_neg if n_neg > 0 else 0
@@ -66,12 +66,12 @@ def roc_curve_with_errors(
         y_true_b = y_true[idx]
         y_score_b = y_score[idx]
 
-        n_pos_b = np.sum(y_true_b == 1)
+        n_pos_b = int(np.sum(y_true_b == 1))
 
         for i, thresh in enumerate(thresholds):
             pred = (y_score_b >= thresh).astype(int)
-            tp = np.sum((pred == 1) & (y_true_b == 1))
-            tpr_samples[b, i] = tp / n_pos_b if n_pos_b > 0 else 0
+            tp = int(np.sum((pred == 1) & (y_true_b == 1)))
+            tpr_samples[b, i] = tp / n_pos_b if n_pos_b > 0 else 0.0
 
     tpr_err_low = tpr - np.percentile(tpr_samples, 16, axis=0)
     tpr_err_high = np.percentile(tpr_samples, 84, axis=0) - tpr
@@ -109,12 +109,12 @@ def significance_improvement(
 
     # Background rejection at this threshold
     bkg_scores = y_score[y_true == 0]
-    bkg_rejection = np.mean(bkg_scores < threshold)
+    bkg_rejection = float(np.mean(bkg_scores < threshold))
 
     # Significance improvement
     if bkg_rejection > 0:
-        return signal_efficiency / np.sqrt(1 - bkg_rejection)
-    return np.inf
+        return float(signal_efficiency / np.sqrt(1 - bkg_rejection))
+    return float(np.inf)
 
 
 def background_rejection(
@@ -145,9 +145,9 @@ def background_rejection(
 
     for i, eff in enumerate(signal_efficiencies):
         threshold = np.percentile(signal_scores, 100 * (1 - eff))
-        rejections[i] = np.mean(bkg_scores < threshold)
+        rejections[i] = float(np.mean(bkg_scores < threshold))
 
-    return rejections
+    return cast(np.ndarray, rejections)
 
 
 def auc_with_error(
@@ -177,10 +177,10 @@ def auc_with_error(
     if random_state is not None:
         np.random.seed(random_state)
 
-    def compute_auc(y_t, y_s):
+    def compute_auc(y_t: np.ndarray, y_s: np.ndarray) -> float:
         """Simple AUC computation using Mann-Whitney U statistic."""
-        n_pos = np.sum(y_t == 1)
-        n_neg = np.sum(y_t == 0)
+        n_pos = int(np.sum(y_t == 1))
+        n_neg = int(np.sum(y_t == 0))
 
         if n_pos == 0 or n_neg == 0:
             return 0.5
@@ -189,11 +189,11 @@ def auc_with_error(
         neg_scores = y_s[y_t == 0]
 
         # Count pairs where positive > negative
-        count = 0
+        count = 0.0
         for ps in pos_scores:
-            count += np.sum(ps > neg_scores) + 0.5 * np.sum(ps == neg_scores)
+            count += float(np.sum(ps > neg_scores) + 0.5 * np.sum(ps == neg_scores))
 
-        return count / (n_pos * n_neg)
+        return float(count / (n_pos * n_neg))
 
     auc = compute_auc(y_true, y_score)
 
@@ -205,4 +205,4 @@ def auc_with_error(
 
     auc_error = np.std(auc_samples)
 
-    return auc, auc_error
+    return float(auc), float(auc_error)

@@ -1,6 +1,7 @@
-import uproot
+
 import pandas as pd
-from pathlib import Path
+import uproot
+
 
 def load_root(file_path, tree_name=None):
     """
@@ -13,7 +14,7 @@ def load_root(file_path, tree_name=None):
             if not keys:
                 return None
             tree_name = keys[0] # Naive guess
-            
+
         tree = file[tree_name]
         return tree.arrays(library="pd")
 

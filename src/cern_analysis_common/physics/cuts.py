@@ -4,7 +4,7 @@ Provides functions to apply kinematic cuts to particle data.
 Designed for use with numpy arrays or pandas DataFrames.
 """
 
-from typing import List, Optional, Tuple, Union
+from typing import List, Optional, Tuple, cast
 
 import numpy as np
 
@@ -30,7 +30,7 @@ def apply_pt_cut(
     array
         Boolean mask where True = passes cut
     """
-    mask = np.ones(len(pt), dtype=bool)
+    mask: np.ndarray = np.ones(len(pt), dtype=bool)
     if pt_min is not None:
         mask &= pt >= pt_min
     if pt_max is not None:
@@ -70,9 +70,9 @@ def apply_eta_cut(
     >>> mask = apply_eta_cut(eta, eta_min=-2.5, eta_max=2.5, symmetric=False)
     """
     if symmetric and eta_max is not None:
-        return np.abs(eta) < eta_max
+        return cast(np.ndarray, np.abs(eta) < eta_max)
 
-    mask = np.ones(len(eta), dtype=bool)
+    mask: np.ndarray = np.ones(len(eta), dtype=bool)
     if eta_min is not None:
         mask &= eta >= eta_min
     if eta_max is not None:
@@ -105,9 +105,9 @@ def apply_rapidity_cut(
         Boolean mask where True = passes cut
     """
     if symmetric and y_max is not None:
-        return np.abs(y) < y_max
+        return cast(np.ndarray, np.abs(y) < y_max)
 
-    mask = np.ones(len(y), dtype=bool)
+    mask: np.ndarray = np.ones(len(y), dtype=bool)
     if y_min is not None:
         mask &= y >= y_min
     if y_max is not None:
@@ -151,7 +151,7 @@ def apply_mass_window(
     else:
         half_width = width
 
-    return np.abs(mass - center) < half_width
+    return cast(np.ndarray, np.abs(mass - center) < half_width)
 
 
 def apply_delta_r_cut(
@@ -175,7 +175,7 @@ def apply_delta_r_cut(
     array
         Boolean mask where True = passes cut
     """
-    mask = np.ones(len(delta_r), dtype=bool)
+    mask: np.ndarray = np.ones(len(delta_r), dtype=bool)
     if dr_min is not None:
         mask &= delta_r >= dr_min
     if dr_max is not None:
@@ -207,7 +207,7 @@ def combine_cuts(*masks: np.ndarray, logic: str = "and") -> np.ndarray:
     if not masks:
         raise ValueError("At least one mask required")
 
-    result = masks[0].copy()
+    result: np.ndarray = masks[0].copy()
 
     if logic == "and":
         for mask in masks[1:]:
@@ -237,8 +237,8 @@ def cut_efficiency(mask: np.ndarray, weights: Optional[np.ndarray] = None) -> fl
         Cut efficiency (fraction passing)
     """
     if weights is not None:
-        return np.sum(weights[mask]) / np.sum(weights)
-    return np.mean(mask)
+        return float(np.sum(weights[mask]) / np.sum(weights))
+    return float(np.mean(mask))
 
 
 def cut_flow(
@@ -271,14 +271,14 @@ def cut_flow(
     ...     print(f"{name}: {n} ({eff:.1%})")
     """
     n_total = len(masks[0][1])
-    cumulative = np.ones(n_total, dtype=bool)
+    cumulative: np.ndarray = np.ones(n_total, dtype=bool)
 
     flow = [("Initial", n_total, 1.0)]
 
     for name, mask in masks:
         cumulative &= mask
-        n_pass = np.sum(cumulative)
-        eff = n_pass / n_total
+        n_pass = int(np.sum(cumulative))
+        eff = float(n_pass / n_total)
         flow.append((name, n_pass, eff))
 
     return flow

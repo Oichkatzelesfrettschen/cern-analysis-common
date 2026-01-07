@@ -4,7 +4,7 @@ Implements proper statistical treatment of efficiencies including
 binomial errors and Clopper-Pearson confidence intervals.
 """
 
-from typing import Optional, Tuple, Union
+from typing import Optional, Tuple, Union, cast
 
 import numpy as np
 from scipy import stats
@@ -38,21 +38,23 @@ def efficiency_ratio(
     -----
     For weighted events, uses Poisson-like error propagation.
     """
+    k: float
     if isinstance(numerator, np.ndarray):
         if weights_num is not None:
-            k = np.sum(weights_num[numerator])
+            k = float(np.sum(weights_num[numerator]))
         else:
-            k = np.sum(numerator)
+            k = float(np.sum(numerator))
     else:
-        k = numerator
+        k = float(numerator)
 
+    n: float
     if isinstance(denominator, np.ndarray):
         if weights_den is not None:
-            n = np.sum(weights_den)
+            n = float(np.sum(weights_den))
         else:
-            n = len(denominator)
+            n = float(len(denominator))
     else:
-        n = denominator
+        n = float(denominator)
 
     if n == 0:
         return 0.0, 0.0
@@ -249,4 +251,4 @@ def unfolding_response_matrix(
     with np.errstate(divide="ignore", invalid="ignore"):
         response_norm = np.where(col_sums > 0, response / col_sums, 0.0)
 
-    return response_norm
+    return cast(np.ndarray, response_norm)

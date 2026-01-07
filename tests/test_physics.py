@@ -1,22 +1,20 @@
 """Tests for physics module."""
 
 import numpy as np
-import pytest
 
 from cern_analysis_common.constants import PION_MASS, PROTON_MASS, Z_MASS
 from cern_analysis_common.physics import (
     FourVector,
-    invariant_mass,
-    transverse_momentum,
-    pseudorapidity,
-    delta_r,
-    delta_phi,
-    apply_pt_cut,
     apply_eta_cut,
     apply_mass_window,
-    combine_cuts,
-    efficiency_ratio,
+    apply_pt_cut,
     clopper_pearson_interval,
+    combine_cuts,
+    delta_phi,
+    delta_r,
+    efficiency_ratio,
+    invariant_mass,
+    pseudorapidity,
 )
 
 

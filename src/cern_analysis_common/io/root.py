@@ -4,17 +4,20 @@ Provides unified interface for reading ROOT files commonly used in HEP.
 """
 
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
 import numpy as np
 
 try:
-    import uproot
     import awkward as ak
+    import uproot
 
     HAS_UPROOT = True
 except ImportError:
     HAS_UPROOT = False
+
+if TYPE_CHECKING:
+    import pandas as pd
 
 
 def _check_uproot():
@@ -221,8 +224,8 @@ def load_dataset(
     Concatenated array (awkward, numpy, or pandas).
     """
     _check_uproot()
-    import glob
     import concurrent.futures
+    import glob
 
     # Resolve file list
     if isinstance(file_pattern, (str, Path)):

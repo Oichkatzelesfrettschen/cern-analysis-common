@@ -1,6 +1,6 @@
 """Histogram plotting utilities for HEP analysis."""
 
-from typing import List, Optional, Tuple, Union
+from typing import List, Literal, Optional, Tuple, Union, cast
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -8,11 +8,11 @@ import numpy as np
 
 def plot_histogram(
     data: np.ndarray,
-    bins: Union[int, np.ndarray] = 50,
+    bins: Union[int, np.ndarray, List[float]] = 50,
     weights: Optional[np.ndarray] = None,
     label: Optional[str] = None,
     color: Optional[str] = None,
-    histtype: str = "step",
+    histtype: Literal["bar", "barstacked", "step", "stepfilled"] = "step",
     ax: Optional["plt.Axes"] = None,
     xlabel: Optional[str] = None,
     ylabel: Optional[str] = None,
@@ -57,9 +57,10 @@ def plot_histogram(
     if ax is None:
         fig, ax = plt.subplots()
 
+    bins_arg: Union[int, List[float]] = bins.tolist() if isinstance(bins, np.ndarray) else bins
     counts, edges, _ = ax.hist(
         data,
-        bins=bins,
+        bins=bins_arg,
         weights=weights,
         label=label,
         color=color,
@@ -78,7 +79,7 @@ def plot_histogram(
     if label:
         ax.legend()
 
-    return ax, counts, edges
+    return ax, cast(np.ndarray, np.asarray(counts)), cast(np.ndarray, edges)
 
 
 def plot_ratio(
@@ -375,7 +376,7 @@ def invariant_mass_plot(
 
     ax.hist(
         mass,
-        bins=bins,
+        bins=bins.tolist() if isinstance(bins, np.ndarray) else bins,
         weights=weights,
         histtype="step",
         color=color,

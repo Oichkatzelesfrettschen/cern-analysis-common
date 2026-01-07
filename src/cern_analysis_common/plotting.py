@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import mplhep as hep
 
+
 def set_hep_style(experiment="ALICE", **kwargs):
     """
     Set matplotlib style to standard HEP experiment style.
@@ -14,7 +15,7 @@ def set_hep_style(experiment="ALICE", **kwargs):
         plt.style.use(style)
     except AttributeError:
         plt.style.use(hep.style.ROOT)
-        
+
 def add_experiment_label(experiment="ALICE", data=True, lumi=None, year=None):
     """
     Add experiment label to the current plot.

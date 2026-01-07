@@ -5,18 +5,18 @@ HEP conventions (ALICE, ATLAS, CMS styles).
 """
 
 from cern_analysis_common.plotting.hep_style import (
-    set_hep_style,
+    add_experiment_label,
     alice_style,
     atlas_style,
     cms_style,
-    add_experiment_label,
+    set_hep_style,
 )
 from cern_analysis_common.plotting.histograms import (
+    invariant_mass_plot,
+    plot_2d_histogram,
+    plot_efficiency,
     plot_histogram,
     plot_ratio,
-    plot_efficiency,
-    plot_2d_histogram,
-    invariant_mass_plot,
 )
 
 __all__ = [

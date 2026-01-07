@@ -6,16 +6,16 @@ Includes:
 - Evaluation metrics
 """
 
-from cern_analysis_common.ml.preprocessing import (
-    standardize,
-    normalize,
-    train_test_split_events,
-    balance_classes,
-)
 from cern_analysis_common.ml.metrics import (
+    background_rejection,
     roc_curve_with_errors,
     significance_improvement,
-    background_rejection,
+)
+from cern_analysis_common.ml.preprocessing import (
+    balance_classes,
+    normalize,
+    standardize,
+    train_test_split_events,
 )
 
 __all__ = [

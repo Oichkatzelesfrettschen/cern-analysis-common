@@ -3,7 +3,7 @@
 Provides utilities for preparing particle physics data for machine learning.
 """
 
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, cast
 
 import numpy as np
 
@@ -179,9 +179,9 @@ def balance_classes(
     classes, counts = np.unique(y, return_counts=True)
 
     if strategy == "undersample":
-        target_count = np.min(counts)
+        target_count = int(np.min(counts))
     elif strategy == "oversample":
-        target_count = np.max(counts)
+        target_count = int(np.max(counts))
     else:
         raise ValueError(f"Unknown strategy: {strategy}")
 
@@ -237,4 +237,4 @@ def create_event_mask(
     else:
         valid_inf = np.ones(len(features), dtype=bool)
 
-    return valid_nan & valid_inf
+    return cast(np.ndarray, valid_nan & valid_inf)
